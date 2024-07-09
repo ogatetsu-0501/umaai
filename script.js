@@ -113,8 +113,9 @@ function processTurnData(turnData) {
         turnData[turn].foodCounts[crop] = previousFoodCount;
         if (turnData[turn].selectedField === crop) {
           turnData[turn].increment = turnData[turn].increment || {};
-          turnData[turn].increment[crop] =
-            previousIncrement + harvestAmount * 1.6;
+          turnData[turn].increment[crop] = Math.floor(
+            previousIncrement + harvestAmount * 1.6
+          );
         } else {
           turnData[turn].increment = turnData[turn].increment || {};
           turnData[turn].increment[crop] = previousIncrement;
@@ -123,18 +124,20 @@ function processTurnData(turnData) {
         turnData[turn].foodCounts[crop] = previousFoodCount;
         if (turnData[turn].selectedField === crop) {
           turnData[turn].increment = turnData[turn].increment || {};
-          turnData[turn].increment[crop] =
-            previousIncrement + harvestAmount * 1.6 + baseHarvestAmount * 1.6;
+          turnData[turn].increment[crop] = Math.floor(
+            previousIncrement + harvestAmount * 1.6 + baseHarvestAmount * 1.6
+          );
         } else {
           turnData[turn].increment = turnData[turn].increment || {};
-          turnData[turn].increment[crop] =
-            previousIncrement + baseHarvestAmount * 1.6;
+          turnData[turn].increment[crop] = Math.floor(
+            previousIncrement + baseHarvestAmount * 1.6
+          );
         }
       } else if (turn === 5) {
         turnData[turn].foodCounts[crop] = previousIncrement + previousFoodCount;
         if (turnData[turn].selectedField === crop) {
           turnData[turn].increment = turnData[turn].increment || {};
-          turnData[turn].increment[crop] = harvestAmount * 1.6;
+          turnData[turn].increment[crop] = Math.floor(harvestAmount * 1.6);
         } else {
           turnData[turn].increment = turnData[turn].increment || {};
           turnData[turn].increment[crop] = 0;
@@ -144,7 +147,7 @@ function processTurnData(turnData) {
           previousIncrement + previousFoodCount - 80;
         if (turnData[turn].selectedField === crop) {
           turnData[turn].increment = turnData[turn].increment || {};
-          turnData[turn].increment[crop] = harvestAmount * 1.6;
+          turnData[turn].increment[crop] = Math.floor(harvestAmount * 1.6);
         } else {
           turnData[turn].increment = turnData[turn].increment || {};
           turnData[turn].increment[crop] = 0;
@@ -155,10 +158,13 @@ function processTurnData(turnData) {
         if (turnData[turn].selectedField === crop) {
           turnData[turn].increment = turnData[turn].increment || {};
           turnData[turn].increment[crop] =
-            harvestAmount * 1.5 + (baseHarvestAmount / 2) * 1.5;
+            Math.floor(harvestAmount * 1.5) +
+            Math.floor(Math.floor(baseHarvestAmount / 2) * 1.5);
         } else {
           turnData[turn].increment = turnData[turn].increment || {};
-          turnData[turn].increment[crop] = (baseHarvestAmount / 2) * 1.5;
+          turnData[turn].increment[crop] = Math.floor(
+            Math.floor(baseHarvestAmount / 2) * 1.5
+          );
         }
       }
     }
