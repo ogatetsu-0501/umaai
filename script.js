@@ -200,6 +200,7 @@ document
             // マイナスになっているターン-nが0ならば処理を終了します
             if (turn - n <= 0) {
               console.log("処理を終了します。");
+              console.log(result);
               return;
             }
 
@@ -227,6 +228,9 @@ document
       // nを1増やします
       n += 1;
     }
+
+    console.log("Negative values resolved:");
+    console.log(result);
 
     // 追加の処理
     const fieldPointsRequired = {
@@ -258,50 +262,73 @@ document
       }
     }
 
-    // 新たな処理の追加
-    let branches = [result]; // 初期状態の分岐を持つ配列
+    console.log("Field points adjusted:");
+    console.log(result);
 
-    while (branches.length > 0) {
-      let currentBranch = branches.pop(); // 現在の分岐を取得
-      console.log("処理中の分岐:", JSON.stringify(currentBranch)); // 分岐データをログ出力
-      for (const crop in currentBranch[0].levels) {
-        for (let turn of [4, 8, 9, 10, 11, 12, 13, 14]) {
-          // 指定されたターンのみ処理
+    // 最初のデータをbranch配列に追加します
+    let branch = [result];
+    console.log("初期のbranch:");
+    console.log(branch);
+
+    // 指定されたターンの値を含む配列を定義します
+    const setturns = [4, 8, 9, 10, 11, 12, 13, 14];
+
+    // 指定された値に対して処理を行うためのforループ
+    for (let n = 0; n < setturns.length; n++) {
+      console.log("nextturn", setturns[n]);
+      let Dobranch = branch.slice(); // branchの浅いコピーを作成
+      for (let b = 0; b < Dobranch.length; b++) {
+        // 各ブランチを処理します
+        let currentBranch = Dobranch[b];
+        console.log(Dobranch);
+        console.log("start", b, currentBranch);
+
+        // レベルのキーを配列として取得し、その配列の値のみループします
+        let foodKeys = Object.keys(currentBranch[0].levels);
+        for (let m = 0; m < foodKeys.length; m++) {
+          let crop = foodKeys[m]; // 現在の作物を取得します
           let i = 1;
           while (true) {
-            const level = currentBranch[turn].levels[crop];
-            // レベルが6以上なら処理を中断
-            if (level + i >= 6) {
+            let validBranch = true; // ブランチが有効かどうかを確認します
+            let level = currentBranch[setturns[n]].levels[crop]; // 現在のレベルを取得します
+            console.log(crop, setturns[n], level, i, b); // 作物、ターン、レベルを表示します
+
+            if (level + i > 5) {
+              // レベルが5を超えるかどうかを確認します
+              console.log("nextfood");
               break;
             }
 
-            const levelChange = `${level}→${level + i}`;
-            if (!fieldPointsRequired[levelChange]) {
-              break;
-            }
+            let nextLevel = level + i; // 次のレベルを計算します
+            const levelChange = `${level}→${nextLevel}`; // レベルの変化を文字列として保存します
+            let pointsToDeduct = fieldPointsRequired[levelChange]; // 必要なフィールドポイントを取得します
+            let newBranch = JSON.parse(JSON.stringify(currentBranch)); // 現在のブランチのコピーを作成します
 
-            const pointsToDeduct = fieldPointsRequired[levelChange];
-            let newBranch = JSON.parse(JSON.stringify(currentBranch)); // 現在の分岐をコピー
-
-            let validBranch = true;
-            for (let adjustTurn = turn; adjustTurn <= 14; adjustTurn++) {
-              if (newBranch[adjustTurn].levels[crop] < level + i) {
-                newBranch[adjustTurn].levels[crop] = level + i;
+            for (let turn = setturns[n]; turn <= 14; turn++) {
+              // ターンをループします
+              if (newBranch[turn].levels[crop] < nextLevel) {
+                // 次のレベルに満たない場合、更新します
+                newBranch[turn].levels[crop] = nextLevel;
               }
-              newBranch[adjustTurn].fieldPoints -= pointsToDeduct;
-              if (newBranch[adjustTurn].fieldPoints < 0) {
+
+              if (newBranch[turn].fieldPoints - pointsToDeduct < 0) {
+                // ポイントが足りない場合、ループを終了します
+                console.log("nextlevel", i);
                 validBranch = false;
                 break;
               }
+
+              newBranch[turn].fieldPoints -= pointsToDeduct; // ポイントを減少させます
             }
 
             if (validBranch) {
-              // 分岐が有効ならば追加
-              branches.push(newBranch);
+              // 有効なブランチならば、追加します
+              newBranch = processTurnData(newBranch);
+              branch.push(newBranch);
               console.log(
-                "新たな分岐が追加されました:",
-                JSON.stringify(newBranch)
-              ); // 新しい分岐をログ出力
+                `新しいbranchが追加されました: 作物 ${crop}, ターン${setturns[n]}, レベル ${level} から ${nextLevel}`
+              );
+              console.log(newBranch);
             }
 
             i++;
@@ -310,5 +337,11 @@ document
       }
     }
 
-    console.log("最終結果:", JSON.stringify(branches)); // 最終結果をログ出力
+    console.log("最終的なbranch:");
+    console.log(branch);
+    // branch配列のn個目の14の値を抜き出す
+    for (let n = 0; n < branch.length; n++) {
+      let value14 = branch[n][14];
+      console.log(`branchの${n}番目の14の値:`, value14);
+    }
   });
