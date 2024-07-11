@@ -208,49 +208,54 @@ document
     event.preventDefault();
     let turnData = initializeTurnData();
     let result = processTurnData(turnData);
+    console.log(result);
 
-    let n = 1;
+    for (let i = 0; i < result.length; i++) {
+      console.log(result[i]);
+      let n = 1;
+      while (true) {
+        let foundNegative = false;
 
-    while (true) {
-      let foundNegative = false;
+        // 各食材ごとに処理します
+        for (const crop in result[i].foodCounts) {
+          // 食材の個数がマイナスになっているターンを探します
+          for (let turn = 1; turn <= 14; turn++) {
+            if (result[i][turn].foodCounts[crop] < 0) {
+              foundNegative = true;
 
-      // 各食材ごとに処理します
-      for (const crop in result[0].foodCounts) {
-        // 食材の個数がマイナスになっているターンを探します
-        for (let turn = 1; turn <= 14; turn++) {
-          if (result[turn].foodCounts[crop] < 0) {
-            foundNegative = true;
+              // マイナスになっているターン-nが0ならばresult[i]を削除し、ループを続行します
+              if (turn - n <= 0) {
+                console.log("削除", result[i]);
+                result.splice(i, 1);
+                i--; // インデックスを調整します
+                return;
+              }
 
-            // マイナスになっているターン-nが0ならば処理を終了します
-            if (turn - n <= 0) {
-              return;
+              // 初期レベルを取得して、それに+1した値を入れます
+              const initialLevels = getInitialLevels();
+              for (let adjustTurn = turn - n; adjustTurn <= 14; adjustTurn++) {
+                result[i][adjustTurn].levels[crop] = initialLevels[crop] + 1;
+              }
+
+              // ターンデータを再計算します
+              result[i] = processTurnData(result[i]);
+              break;
             }
+          }
 
-            // 初期レベルを取得して、それに+1した値を入れます
-            const initialLevels = getInitialLevels();
-            for (let adjustTurn = turn - n; adjustTurn <= 14; adjustTurn++) {
-              result[adjustTurn].levels[crop] = initialLevels[crop] + 1;
-            }
-
-            // ターンデータを再計算します
-            result = processTurnData(result);
+          if (foundNegative) {
             break;
           }
         }
 
-        if (foundNegative) {
+        if (!foundNegative) {
           break;
         }
-      }
 
-      if (!foundNegative) {
-        break;
+        // nを1増やします
+        n += 1;
       }
-
-      // nを1増やします
-      n += 1;
     }
-
     // 追加の処理
     const fieldPointsRequired = {
       "1→2": 100,
