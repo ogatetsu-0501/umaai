@@ -15,6 +15,45 @@ function getInitialFoodCount(food) {
 function getFieldPoints() {
   return parseInt(document.getElementById("field_points").value, 10) || 0;
 }
+function generateUniquePermutations(items, length) {
+  let results = new Set();
+
+  function permute(arr, m = []) {
+    if (m.length === length) {
+      results.add(m.slice().sort().toString());
+      return;
+    }
+    for (let i = 0; i < arr.length; i++) {
+      permute(arr, m.concat(arr[i]));
+    }
+  }
+
+  permute(items);
+  return Array.from(results).map((item) => item.split(","));
+}
+function generateCombinedPermutations() {
+  let items = ["carrot", "garlic", "potato", "chili", "strawberry"];
+  let uniquePermutations1 = generateUniquePermutations(items, 4);
+  let uniquePermutations2 = generateUniquePermutations(items, 4);
+  let uniquePermutations3 = generateUniquePermutations(items, 6);
+
+  let combinedPermutations = [];
+
+  for (let n = 0; n < uniquePermutations1.length; n++) {
+    for (let m = 0; m < uniquePermutations2.length; m++) {
+      for (let o = 0; o < uniquePermutations3.length; o++) {
+        let combined = [
+          ...uniquePermutations1[n],
+          ...uniquePermutations2[m],
+          ...uniquePermutations3[o],
+        ];
+        combinedPermutations.push(combined);
+      }
+    }
+  }
+
+  return combinedPermutations;
+}
 
 function initializeTurnData() {
   const initialLevels = getInitialLevels();
@@ -27,33 +66,15 @@ function initializeTurnData() {
   };
   const initialFieldPoints = getFieldPoints();
 
-  const selectedFields = [
-    "",
-    "carrot",
-    "carrot",
-    "carrot",
-    "carrot",
-    "carrot",
-    "carrot",
-    "carrot",
-    "carrot",
-    "carrot",
-    "carrot",
-    "carrot",
-    "carrot",
-    "carrot",
-    "carrot",
-  ];
+  const combinedPermutations = generateCombinedPermutations();
 
-  const turnData = [];
+  let allTurnData = [];
 
-  for (let turn = 0; turn <= 14; turn++) {
-    let fieldPoints;
+  for (let i = 0; i < combinedPermutations.length; i++) {
+    let turnData = [];
+    let fieldPoints = initialFieldPoints;
 
-    if (turn === 0) {
-      fieldPoints = initialFieldPoints;
-    } else {
-      fieldPoints = turnData[turn - 1].fieldPoints;
+    for (let turn = 0; turn <= 14; turn++) {
       if (turn === 5) {
         fieldPoints += 160;
       } else if (turn === 9) {
@@ -61,27 +82,30 @@ function initializeTurnData() {
       } else if ([10, 11, 12, 13, 14].includes(turn)) {
         fieldPoints += 75;
       }
+
+      turnData.push({
+        turn: turn,
+        levels: { ...initialLevels },
+        foodCounts:
+          turn === 0
+            ? { ...initialFoodCounts }
+            : {
+                carrot: 0,
+                garlic: 0,
+                potato: 0,
+                chili: 0,
+                strawberry: 0,
+              },
+        fieldPoints: fieldPoints,
+        selectedField:
+          combinedPermutations[i][turn % combinedPermutations[i].length],
+      });
     }
 
-    turnData.push({
-      turn: turn,
-      levels: { ...initialLevels },
-      foodCounts:
-        turn === 0
-          ? { ...initialFoodCounts }
-          : {
-              carrot: 0,
-              garlic: 0,
-              potato: 0,
-              chili: 0,
-              strawberry: 0,
-            },
-      fieldPoints: fieldPoints,
-      selectedField: selectedFields[turn],
-    });
+    allTurnData.push(turnData);
   }
 
-  return turnData;
+  return allTurnData;
 }
 
 function processTurnData(turnData) {
@@ -199,8 +223,6 @@ document
 
             // マイナスになっているターン-nが0ならば処理を終了します
             if (turn - n <= 0) {
-              console.log("処理を終了します。");
-              console.log(result);
               return;
             }
 
@@ -228,9 +250,6 @@ document
       // nを1増やします
       n += 1;
     }
-
-    console.log("Negative values resolved:");
-    console.log(result);
 
     // 追加の処理
     const fieldPointsRequired = {
@@ -262,26 +281,18 @@ document
       }
     }
 
-    console.log("Field points adjusted:");
-    console.log(result);
-
     // 最初のデータをbranch配列に追加します
-    let branch = [result];
-    console.log("初期のbranch:");
-    console.log(branch);
+    let branch = result;
 
     // 指定されたターンの値を含む配列を定義します
     const setturns = [4, 8, 9, 10, 11, 12, 13, 14];
 
     // 指定された値に対して処理を行うためのforループ
     for (let n = 0; n < setturns.length; n++) {
-      console.log("nextturn", setturns[n]);
       let Dobranch = branch.slice(); // branchの浅いコピーを作成
       for (let b = 0; b < Dobranch.length; b++) {
         // 各ブランチを処理します
         let currentBranch = Dobranch[b];
-        console.log(Dobranch);
-        console.log("start", b, currentBranch);
 
         // レベルのキーを配列として取得し、その配列の値のみループします
         let foodKeys = Object.keys(currentBranch[0].levels);
@@ -291,11 +302,9 @@ document
           while (true) {
             let validBranch = true; // ブランチが有効かどうかを確認します
             let level = currentBranch[setturns[n]].levels[crop]; // 現在のレベルを取得します
-            console.log(crop, setturns[n], level, i, b); // 作物、ターン、レベルを表示します
 
             if (level + i > 5) {
               // レベルが5を超えるかどうかを確認します
-              console.log("nextfood");
               break;
             }
 
@@ -313,7 +322,6 @@ document
 
               if (newBranch[turn].fieldPoints - pointsToDeduct < 0) {
                 // ポイントが足りない場合、ループを終了します
-                console.log("nextlevel", i);
                 validBranch = false;
                 break;
               }
@@ -324,11 +332,10 @@ document
             if (validBranch) {
               // 有効なブランチならば、追加します
               newBranch = processTurnData(newBranch);
-              branch.push(newBranch);
+              branch[0].push(newBranch);
               console.log(
                 `新しいbranchが追加されました: 作物 ${crop}, ターン${setturns[n]}, レベル ${level} から ${nextLevel}`
               );
-              console.log(newBranch);
             }
 
             i++;
@@ -337,11 +344,127 @@ document
       }
     }
 
-    console.log("最終的なbranch:");
-    console.log(branch);
-    // branch配列のn個目の14の値を抜き出す
-    for (let n = 0; n < branch.length; n++) {
-      let value14 = branch[n][14];
-      console.log(`branchの${n}番目の14の値:`, value14);
+    // 料理別の素材消費数を定義
+    const foodRequirements = {
+      サンド: { carrot: 25, garlic: 0, potato: 50, chili: 0, strawberry: 50 },
+      カレー: { carrot: 25, garlic: 0, potato: 50, chili: 0, strawberry: 50 },
+      クラシックポトフ: {
+        carrot: 150,
+        garlic: 0,
+        potato: 80,
+        chili: 0,
+        strawberry: 0,
+      },
+      クラシックラーメン: {
+        carrot: 0,
+        garlic: 150,
+        potato: 0,
+        chili: 80,
+        strawberry: 0,
+      },
+      クラシックピザ: {
+        carrot: 0,
+        garlic: 80,
+        potato: 150,
+        chili: 0,
+        strawberry: 0,
+      },
+      クラシックマーボー: {
+        carrot: 40,
+        garlic: 0,
+        potato: 40,
+        chili: 150,
+        strawberry: 0,
+      },
+      クラシックアイス: {
+        carrot: 80,
+        garlic: 0,
+        potato: 0,
+        chili: 0,
+        strawberry: 150,
+      },
+      シニアポトフ: {
+        carrot: 250,
+        garlic: 0,
+        potato: 80,
+        chili: 0,
+        strawberry: 0,
+      },
+      シニアラーメン: {
+        carrot: 0,
+        garlic: 250,
+        potato: 0,
+        chili: 80,
+        strawberry: 0,
+      },
+      シニアピザ: {
+        carrot: 0,
+        garlic: 80,
+        potato: 250,
+        chili: 0,
+        strawberry: 0,
+      },
+      シニアマーボー: {
+        carrot: 40,
+        garlic: 0,
+        potato: 40,
+        chili: 250,
+        strawberry: 0,
+      },
+      シニアアイス: {
+        carrot: 80,
+        garlic: 0,
+        potato: 0,
+        chili: 0,
+        strawberry: 250,
+      },
+    };
+
+    for (let meal in foodRequirements) {
+      let Lbranch = branch.slice(); // branchの浅いコピーを作成
+
+      for (let n = 0; n < Lbranch.length; n++) {
+        let currentBranch = JSON.parse(JSON.stringify(Lbranch[n])); // branch[n]をコピー
+        let foodCounts = JSON.parse(
+          JSON.stringify(currentBranch[14].foodCounts)
+        ); // branch[n][14]のfoodCountsをコピー
+        let mealCount = 0;
+        while (true) {
+          let canCook = true;
+
+          // 料理の素材数をfoodCountsから引く
+          for (let ingredient in foodRequirements[meal]) {
+            if (
+              foodCounts[ingredient] - foodRequirements[meal][ingredient] <
+              0
+            ) {
+              canCook = false;
+              break;
+            }
+          }
+
+          if (!canCook) {
+            break;
+          }
+
+          // 食材を引く
+          for (let ingredient in foodRequirements[meal]) {
+            foodCounts[ingredient] -= foodRequirements[meal][ingredient];
+          }
+
+          // 料理カウントを+1
+          mealCount++;
+
+          // LbranchにcurrentBranchを入れる
+          let newBranch = JSON.parse(JSON.stringify(Lbranch[n]));
+          newBranch[14].foodCounts = JSON.parse(JSON.stringify(foodCounts));
+          newBranch[`${meal}Count`] = mealCount;
+
+          branch.push(newBranch);
+        }
+      }
     }
+
+    // 結果を出力
+    console.log(branch);
   });
