@@ -56,59 +56,62 @@ function generateCombinedPermutations() {
 }
 
 function initializeTurnData() {
+  // 初期のレベルを取得する関数を呼び出す
   const initialLevels = getInitialLevels();
+
+  // 初期の食べ物の数をオブジェクトとして取得する
   const initialFoodCounts = {
-    carrot: getInitialFoodCount("carrot"),
-    garlic: getInitialFoodCount("garlic"),
-    potato: getInitialFoodCount("potato"),
-    chili: getInitialFoodCount("chili"),
-    strawberry: getInitialFoodCount("strawberry"),
+    carrot: getInitialFoodCount("carrot"), // 人参の初期数を取得
+    garlic: getInitialFoodCount("garlic"), // ニンニクの初期数を取得
+    potato: getInitialFoodCount("potato"), // じゃがいもの初期数を取得
+    chili: getInitialFoodCount("chili"), // チリの初期数を取得
+    strawberry: getInitialFoodCount("strawberry"), // いちごの初期数を取得
   };
+
+  // 初期のフィールドポイントを取得する
   const initialFieldPoints = getFieldPoints();
 
-  const combinedPermutations = generateCombinedPermutations();
+  // 現在の組み合わせのターンデータを格納する配列
+  let turnData = [];
+  // 現在のフィールドポイントを初期値に設定
+  let fieldPoints = initialFieldPoints;
 
-  let allTurnData = [];
-
-  for (let i = 0; i < combinedPermutations.length; i++) {
-    let turnData = [];
-    let fieldPoints = initialFieldPoints;
-
-    for (let turn = 0; turn <= 14; turn++) {
-      if (turn === 5) {
-        fieldPoints += 160;
-      } else if (turn === 9) {
-        fieldPoints += 160;
-      } else if ([10, 11, 12, 13, 14].includes(turn)) {
-        fieldPoints += 75;
-      }
-
-      turnData.push({
-        turn: turn,
-        levels: { ...initialLevels },
-        foodCounts:
-          turn === 0
-            ? { ...initialFoodCounts }
-            : {
-                carrot: 0,
-                garlic: 0,
-                potato: 0,
-                chili: 0,
-                strawberry: 0,
-              },
-        fieldPoints: fieldPoints,
-        selectedField:
-          combinedPermutations[i][turn % combinedPermutations[i].length],
-      });
+  // 0ターンから14ターンまでループを回す
+  for (let turn = 0; turn <= 14; turn++) {
+    // 特定のターンでフィールドポイントを追加する
+    if (turn === 5) {
+      fieldPoints += 160; // 5ターン目で160ポイント追加
+    } else if (turn === 9) {
+      fieldPoints += 160; // 9ターン目で160ポイント追加
+    } else if ([10, 11, 12, 13, 14].includes(turn)) {
+      fieldPoints += 75; // 10ターン目から14ターン目まで75ポイント追加
     }
 
-    allTurnData.push(turnData);
+    // ターンデータを配列に追加
+    turnData.push({
+      turn: turn, // 現在のターン
+      levels: { ...initialLevels }, // 現在のレベル
+      foodCounts:
+        turn === 0
+          ? { ...initialFoodCounts } // 0ターン目は初期の食べ物の数
+          : {
+              carrot: 0, // それ以外のターンは食べ物の数は0
+              garlic: 0,
+              potato: 0,
+              chili: 0,
+              strawberry: 0,
+            },
+      fieldPoints: fieldPoints, // 現在のフィールドポイント
+      selectedField: "", // 空のフィールドを選択
+    });
   }
 
-  return allTurnData;
+  // 現在のターンデータを返す
+  return turnData;
 }
 
 function processTurnData(turnData) {
+  // 収穫量を定義するオブジェクト
   const harvestAmounts = {
     1: 20,
     2: 30,
@@ -116,6 +119,7 @@ function processTurnData(turnData) {
     4: 40,
     5: 40,
   };
+  // 基本収穫量を定義するオブジェクト
   const baseHarvestAmounts = {
     1: 20,
     2: 20,
@@ -124,72 +128,96 @@ function processTurnData(turnData) {
     5: 40,
   };
 
+  // 14ターン分のデータを処理する
   for (let turn = 1; turn <= 14; turn++) {
-    for (const crop in turnData[turn].foodCounts) {
+    // 各作物に対して処理を行う
+    console.log(turnData);
+    for (const crop in turnData.foodCounts) {
+      // 作物のレベルを取得する
       const level = turnData[turn].levels[crop];
+      // 作物の収穫量を取得する
       const harvestAmount = harvestAmounts[level];
+      // 基本収穫量を取得する
       const baseHarvestAmount = baseHarvestAmounts[level];
+      // 前のターンの作物の数を取得する
       let previousFoodCount = turnData[turn - 1].foodCounts[crop];
+      // 前のターンの増加量を取得する
       let previousIncrement = turnData[turn - 1].increment
         ? turnData[turn - 1].increment[crop]
         : 0;
 
+      // 特定のターンに対する処理
       if ([1, 2, 3, 6, 7].includes(turn)) {
+        // 前のターンの作物の数をそのまま保持する
         turnData[turn].foodCounts[crop] = previousFoodCount;
+        // 選択された作物の場合、増加量を計算する
         if (turnData[turn].selectedField === crop) {
           turnData[turn].increment = turnData[turn].increment || {};
           turnData[turn].increment[crop] = Math.floor(
             previousIncrement + harvestAmount * 1.6
           );
         } else {
+          // 選択されていない作物の場合、増加量を前のターンのままにする
           turnData[turn].increment = turnData[turn].increment || {};
           turnData[turn].increment[crop] = previousIncrement;
         }
       } else if ([4, 8].includes(turn)) {
+        // 前のターンの作物の数をそのまま保持する
         turnData[turn].foodCounts[crop] = previousFoodCount;
+        // 選択された作物の場合、増加量を計算する
         if (turnData[turn].selectedField === crop) {
           turnData[turn].increment = turnData[turn].increment || {};
           turnData[turn].increment[crop] = Math.floor(
             previousIncrement + harvestAmount * 1.6 + baseHarvestAmount * 1.6
           );
         } else {
+          // 選択されていない作物の場合、増加量を計算する
           turnData[turn].increment = turnData[turn].increment || {};
           turnData[turn].increment[crop] = Math.floor(
             previousIncrement + baseHarvestAmount * 1.6
           );
         }
       } else if (turn === 5) {
+        // 前のターンの作物の数に増加量を加える
         turnData[turn].foodCounts[crop] = previousIncrement + previousFoodCount;
+        // 選択された作物の場合、増加量を計算する
         if (turnData[turn].selectedField === crop) {
           turnData[turn].increment = turnData[turn].increment || {};
           turnData[turn].increment[crop] = Math.floor(harvestAmount * 1.6);
         } else {
+          // 選択されていない作物の場合、増加量を0にする
           turnData[turn].increment = turnData[turn].increment || {};
           turnData[turn].increment[crop] = 0;
         }
       } else if (turn === 9) {
+        // 前のターンの作物の数に増加量を加え、80を引く
         turnData[turn].foodCounts[crop] =
           previousIncrement + previousFoodCount - 80;
+        // 選択された作物の場合、増加量を計算する
         if (turnData[turn].selectedField === crop) {
           turnData[turn].increment = turnData[turn].increment || {};
           turnData[turn].increment[crop] =
             Math.floor(harvestAmount * 1.5) +
             Math.floor(Math.floor(baseHarvestAmount / 2) * 1.5);
         } else {
+          // 選択されていない作物の場合、増加量を計算する
           turnData[turn].increment = turnData[turn].increment || {};
           turnData[turn].increment[crop] = Math.floor(
             Math.floor(baseHarvestAmount / 2) * 1.5
           );
         }
       } else if ([10, 11, 12, 13, 14].includes(turn)) {
+        // 前のターンの作物の数に増加量を加え、80を引く
         turnData[turn].foodCounts[crop] =
           previousIncrement + previousFoodCount - 80;
+        // 選択された作物の場合、増加量を計算する
         if (turnData[turn].selectedField === crop) {
           turnData[turn].increment = turnData[turn].increment || {};
           turnData[turn].increment[crop] =
             Math.floor(harvestAmount * 1.5) +
             Math.floor(Math.floor(baseHarvestAmount / 2) * 1.5);
         } else {
+          // 選択されていない作物の場合、増加量を計算する
           turnData[turn].increment = turnData[turn].increment || {};
           turnData[turn].increment[crop] = Math.floor(
             Math.floor(baseHarvestAmount / 2) * 1.5
@@ -199,6 +227,8 @@ function processTurnData(turnData) {
     }
   }
 
+  console.log(turnData);
+  // すべてのターンデータを返す
   return turnData;
 }
 
@@ -209,53 +239,53 @@ document
     let turnData = initializeTurnData();
     let result = processTurnData(turnData);
     console.log(result);
+    console.log(result.length);
 
-    for (let i = 0; i < result.length; i++) {
-      console.log(result[i]);
-      let n = 1;
-      while (true) {
-        let foundNegative = false;
+    while (true) {
+      let foundNegative = false;
 
+      // 食材の個数がマイナスになっているターンを探します
+      for (let turn = 1; turn <= 14; turn++) {
         // 各食材ごとに処理します
-        for (const crop in result[i].foodCounts) {
-          // 食材の個数がマイナスになっているターンを探します
-          for (let turn = 1; turn <= 14; turn++) {
-            if (result[i][turn].foodCounts[crop] < 0) {
-              foundNegative = true;
+        for (const crop in result[turn].foodCounts) {
+          console.log(turn, result[turn].foodCounts[crop], crop);
+          if (result[turn].foodCounts[crop] < 0) {
+            foundNegative = true;
 
-              // マイナスになっているターン-nが0ならばresult[i]を削除し、ループを続行します
-              if (turn - n <= 0) {
-                console.log("削除", result[i]);
-                result.splice(i, 1);
-                i--; // インデックスを調整します
-                return;
-              }
-
-              // 初期レベルを取得して、それに+1した値を入れます
-              const initialLevels = getInitialLevels();
-              for (let adjustTurn = turn - n; adjustTurn <= 14; adjustTurn++) {
-                result[i][adjustTurn].levels[crop] = initialLevels[crop] + 1;
-              }
-
-              // ターンデータを再計算します
-              result[i] = processTurnData(result[i]);
-              break;
+            // マイナスになっているターン-nが0ならばresult[i]を削除し、ループを続行します
+            if (turn - n <= 0) {
+              console.log("削除", result[i]);
+              result.splice(i, 1);
+              i--; // インデックスを調整します
+              return;
             }
-          }
 
-          if (foundNegative) {
+            // 初期レベルを取得して、それに+1した値を入れます
+            const initialLevels = getInitialLevels();
+            for (let adjustTurn = turn - n; adjustTurn <= 14; adjustTurn++) {
+              result[adjustTurn].levels[crop] = initialLevels[crop] + 1;
+            }
+
+            // ターンデータを再計算します
+            result[i] = processTurnData(result[i]);
             break;
           }
         }
 
-        if (!foundNegative) {
+        if (foundNegative) {
           break;
         }
-
-        // nを1増やします
-        n += 1;
       }
+
+      if (!foundNegative) {
+        break;
+      }
+
+      // nを1増やします
+      n += 1;
     }
+    console.log(result);
+
     // 追加の処理
     const fieldPointsRequired = {
       "1→2": 100,
@@ -300,13 +330,13 @@ document
         let currentBranch = Dobranch[b];
 
         // レベルのキーを配列として取得し、その配列の値のみループします
-        let foodKeys = Object.keys(currentBranch[0].levels);
+        let foodKeys = Object.keys(currentBranch.levels);
         for (let m = 0; m < foodKeys.length; m++) {
           let crop = foodKeys[m]; // 現在の作物を取得します
           let i = 1;
           while (true) {
             let validBranch = true; // ブランチが有効かどうかを確認します
-            let level = currentBranch[setturns[n]].levels[crop]; // 現在のレベルを取得します
+            let level = currentBranch.levels[crop]; // 現在のレベルを取得します
 
             if (level + i > 5) {
               // レベルが5を超えるかどうかを確認します
@@ -317,7 +347,7 @@ document
             const levelChange = `${level}→${nextLevel}`; // レベルの変化を文字列として保存します
             let pointsToDeduct = fieldPointsRequired[levelChange]; // 必要なフィールドポイントを取得します
             let newBranch = JSON.parse(JSON.stringify(currentBranch)); // 現在のブランチのコピーを作成します
-
+            console.log(newBranch);
             for (let turn = setturns[n]; turn <= 14; turn++) {
               // ターンをループします
               if (newBranch[turn].levels[crop] < nextLevel) {
